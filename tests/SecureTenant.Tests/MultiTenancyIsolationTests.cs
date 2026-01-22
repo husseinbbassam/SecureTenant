@@ -255,39 +255,32 @@ public class MultiTenancyIsolationTests
     [Fact]
     public void Subdomain_Mapping_Converts_tenantA_To_TenantA()
     {
-        // This is a unit test for the subdomain mapping logic
-        // The mapping should convert "tenanta" subdomain to "TenantA"
-        
-        var subdomain = "tenanta";
-        string? tenantId = null;
-        
-        if (subdomain.StartsWith("tenant"))
-        {
-            var suffix = subdomain.Substring("tenant".Length);
-            if (!string.IsNullOrEmpty(suffix))
-            {
-                tenantId = "Tenant" + char.ToUpperInvariant(suffix[0]) + suffix.Substring(1);
-            }
-        }
-        
+        // Test the subdomain mapping logic used by TenantService
+        var tenantId = MapSubdomainToTenantId("tenanta");
         Assert.Equal("TenantA", tenantId);
     }
 
     [Fact]
     public void Subdomain_Mapping_Converts_tenantB_To_TenantB()
     {
-        var subdomain = "tenantb";
-        string? tenantId = null;
-        
+        var tenantId = MapSubdomainToTenantId("tenantb");
+        Assert.Equal("TenantB", tenantId);
+    }
+    
+    /// <summary>
+    /// Helper method that replicates the subdomain mapping logic from TenantService
+    /// </summary>
+    private string? MapSubdomainToTenantId(string subdomain)
+    {
         if (subdomain.StartsWith("tenant"))
         {
             var suffix = subdomain.Substring("tenant".Length);
             if (!string.IsNullOrEmpty(suffix))
             {
-                tenantId = "Tenant" + char.ToUpperInvariant(suffix[0]) + suffix.Substring(1);
+                return "Tenant" + char.ToUpperInvariant(suffix[0]) + suffix.Substring(1);
             }
         }
         
-        Assert.Equal("TenantB", tenantId);
+        return null;
     }
 }
