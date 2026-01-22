@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using OpenIddict.Abstractions;
+using SecureTenant.Auth.Middleware;
 using SecureTenant.Core.Entities;
 using SecureTenant.Core.Interfaces;
 using SecureTenant.Infrastructure.Data;
@@ -12,8 +13,9 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container
 builder.Services.AddHttpContextAccessor();
 
-// Register TenantProvider
+// Register TenantProvider and TenantService
 builder.Services.AddScoped<ITenantProvider, TenantProvider>();
+builder.Services.AddScoped<ITenantService, SecureTenant.Infrastructure.Services.TenantService>();
 
 // Configure Entity Framework and SQLite
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -79,7 +81,7 @@ builder.Services.AddOpenIddict()
                .SetAccessTokenLifetime(TimeSpan.FromMinutes(30));
         
         // Register claims
-        options.RegisterClaims(Claims.Name, Claims.Email, Claims.Role, "tenant_id", "user_hierarchy");
+        options.RegisterClaims(Claims.Name, Claims.Email, Claims.Role, "tenant_id", "user_hierarchy", "membership_level");
         
         // Register scopes
         options.RegisterScopes(
@@ -148,6 +150,9 @@ app.UseStaticFiles();
 
 app.UseRouting();
 app.UseCors();
+
+// Add tenant validation middleware
+app.UseTenantValidation();
 
 app.UseAuthentication();
 app.UseAuthorization();

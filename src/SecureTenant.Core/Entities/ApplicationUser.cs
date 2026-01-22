@@ -13,6 +13,8 @@ public class ApplicationUser : IdentityUser, ITenantEntity
     // Custom claims
     public string UserHierarchy { get; set; } = string.Empty;
     
+    public string MembershipLevel { get; set; } = string.Empty;
+    
     public string FirstName { get; set; } = string.Empty;
     
     public string LastName { get; set; } = string.Empty;

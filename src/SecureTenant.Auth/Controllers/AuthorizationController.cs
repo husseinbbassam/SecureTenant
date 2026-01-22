@@ -121,6 +121,11 @@ public class AuthorizationController : ControllerBase
             {
                 identity.SetClaim("user_hierarchy", user.UserHierarchy);
             }
+            
+            if (!string.IsNullOrEmpty(user.MembershipLevel))
+            {
+                identity.SetClaim("membership_level", user.MembershipLevel);
+            }
 
             identity.SetDestinations(GetDestinations);
 
@@ -161,6 +166,11 @@ public class AuthorizationController : ControllerBase
         {
             claims["user_hierarchy"] = user.UserHierarchy;
         }
+        
+        if (!string.IsNullOrEmpty(user.MembershipLevel))
+        {
+            claims["membership_level"] = user.MembershipLevel;
+        }
 
         return Ok(claims);
     }
@@ -171,7 +181,7 @@ public class AuthorizationController : ControllerBase
         {
             Claims.Name or Claims.Email or Claims.Subject => 
                 [Destinations.AccessToken, Destinations.IdentityToken],
-            "tenant_id" or "user_hierarchy" => 
+            "tenant_id" or "user_hierarchy" or "membership_level" => 
                 [Destinations.AccessToken, Destinations.IdentityToken],
             _ => [Destinations.AccessToken]
         };

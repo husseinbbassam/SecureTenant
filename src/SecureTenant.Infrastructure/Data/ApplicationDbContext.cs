@@ -48,12 +48,32 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             entity.Property(e => e.FirstName).HasMaxLength(100);
             entity.Property(e => e.LastName).HasMaxLength(100);
             entity.Property(e => e.UserHierarchy).HasMaxLength(500);
+            entity.Property(e => e.MembershipLevel).HasMaxLength(100);
             
             entity.HasIndex(e => e.TenantId);
-            
-            // Global Query Filter for multi-tenancy
-            entity.HasQueryFilter(e => e.TenantId == _tenantProvider.GetCurrentTenantId());
         });
+        
+        // Apply Global Query Filter to all entities implementing ITenantEntity
+        ApplyGlobalFilters(builder);
+    }
+    
+    private void ApplyGlobalFilters(ModelBuilder builder)
+    {
+        // Get all entity types that implement ITenantEntity
+        foreach (var entityType in builder.Model.GetEntityTypes())
+        {
+            if (typeof(ITenantEntity).IsAssignableFrom(entityType.ClrType))
+            {
+                // Create the filter expression: e => e.TenantId == _tenantProvider.GetCurrentTenantId()
+                var parameter = System.Linq.Expressions.Expression.Parameter(entityType.ClrType, "e");
+                var property = System.Linq.Expressions.Expression.Property(parameter, nameof(ITenantEntity.TenantId));
+                var tenantId = System.Linq.Expressions.Expression.Constant(_tenantProvider.GetCurrentTenantId());
+                var comparison = System.Linq.Expressions.Expression.Equal(property, tenantId);
+                var lambda = System.Linq.Expressions.Expression.Lambda(comparison, parameter);
+                
+                builder.Entity(entityType.ClrType).HasQueryFilter(lambda);
+            }
+        }
     }
     
     public override int SaveChanges()
