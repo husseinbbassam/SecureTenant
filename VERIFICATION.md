@@ -161,4 +161,4 @@ GET http://localhost:5400/.well-known/openid-configuration
 ---
 **Implementation by:** GitHub Copilot Agent  
 **Framework:** .NET 9 with C# 13  
-**OpenIddict Version:** 6.0.0
+**OpenIddict Version:** 6.0.0 (resolved from 5.9.0 request)

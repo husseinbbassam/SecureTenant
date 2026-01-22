@@ -123,11 +123,12 @@ builder.Services.AddRazorPages();
 // Add controllers
 builder.Services.AddControllers();
 
-// Add CORS for development
+// Add CORS for development (configure more restrictively for production)
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
+        // TODO: In production, replace with specific allowed origins
         policy.AllowAnyOrigin()
               .AllowAnyMethod()
               .AllowAnyHeader();
