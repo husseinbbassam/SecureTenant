@@ -1,0 +1,6 @@
+@SecureTenant.ProtectedApi_HostAddress = http://localhost:5073
+
+GET {{SecureTenant.ProtectedApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

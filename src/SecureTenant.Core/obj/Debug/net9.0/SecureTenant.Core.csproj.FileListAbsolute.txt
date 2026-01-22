@@ -1,0 +1,13 @@
+/home/runner/work/SecureTenant/SecureTenant/src/SecureTenant.Core/bin/Debug/net9.0/SecureTenant.Core.deps.json
+/home/runner/work/SecureTenant/SecureTenant/src/SecureTenant.Core/bin/Debug/net9.0/SecureTenant.Core.dll
+/home/runner/work/SecureTenant/SecureTenant/src/SecureTenant.Core/bin/Debug/net9.0/SecureTenant.Core.pdb
+/home/runner/work/SecureTenant/SecureTenant/src/SecureTenant.Core/obj/Debug/net9.0/SecureTenant.Core.csproj.AssemblyReference.cache
+/home/runner/work/SecureTenant/SecureTenant/src/SecureTenant.Core/obj/Debug/net9.0/SecureTenant.Core.GeneratedMSBuildEditorConfig.editorconfig
+/home/runner/work/SecureTenant/SecureTenant/src/SecureTenant.Core/obj/Debug/net9.0/SecureTenant.Core.AssemblyInfoInputs.cache
+/home/runner/work/SecureTenant/SecureTenant/src/SecureTenant.Core/obj/Debug/net9.0/SecureTenant.Core.AssemblyInfo.cs
+/home/runner/work/SecureTenant/SecureTenant/src/SecureTenant.Core/obj/Debug/net9.0/SecureTenant.Core.csproj.CoreCompileInputs.cache
+/home/runner/work/SecureTenant/SecureTenant/src/SecureTenant.Core/obj/Debug/net9.0/SecureTenant.Core.sourcelink.json
+/home/runner/work/SecureTenant/SecureTenant/src/SecureTenant.Core/obj/Debug/net9.0/SecureTenant.Core.dll
+/home/runner/work/SecureTenant/SecureTenant/src/SecureTenant.Core/obj/Debug/net9.0/refint/SecureTenant.Core.dll
+/home/runner/work/SecureTenant/SecureTenant/src/SecureTenant.Core/obj/Debug/net9.0/SecureTenant.Core.pdb
+/home/runner/work/SecureTenant/SecureTenant/src/SecureTenant.Core/obj/Debug/net9.0/ref/SecureTenant.Core.dll
