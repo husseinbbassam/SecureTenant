@@ -15,10 +15,10 @@ builder.Services.AddHttpContextAccessor();
 // Register TenantProvider
 builder.Services.AddScoped<ITenantProvider, TenantProvider>();
 
-// Configure Entity Framework and SQL Server
+// Configure Entity Framework and SQLite
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection"));
     
     // Configure OpenIddict to use EF Core
     options.UseOpenIddict();
@@ -100,7 +100,8 @@ builder.Services.AddOpenIddict()
                .EnableAuthorizationEndpointPassthrough()
                .EnableTokenEndpointPassthrough()
                .EnableUserInfoEndpointPassthrough()
-               .EnableStatusCodePagesIntegration();
+               .EnableStatusCodePagesIntegration()
+               .DisableTransportSecurityRequirement(); // Allow HTTP for development
     })
     
     // Register the OpenIddict validation components
