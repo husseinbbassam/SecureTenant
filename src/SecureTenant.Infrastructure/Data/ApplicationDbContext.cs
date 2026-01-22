@@ -67,8 +67,13 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
                 // Create the filter expression: e => e.TenantId == _tenantProvider.GetCurrentTenantId()
                 var parameter = System.Linq.Expressions.Expression.Parameter(entityType.ClrType, "e");
                 var property = System.Linq.Expressions.Expression.Property(parameter, nameof(ITenantEntity.TenantId));
-                var tenantId = System.Linq.Expressions.Expression.Constant(_tenantProvider.GetCurrentTenantId());
-                var comparison = System.Linq.Expressions.Expression.Equal(property, tenantId);
+                
+                // Create a call to _tenantProvider.GetCurrentTenantId() - this will be evaluated at query time
+                var tenantProviderConst = System.Linq.Expressions.Expression.Constant(_tenantProvider);
+                var getCurrentTenantIdMethod = typeof(ITenantProvider).GetMethod(nameof(ITenantProvider.GetCurrentTenantId));
+                var tenantIdCall = System.Linq.Expressions.Expression.Call(tenantProviderConst, getCurrentTenantIdMethod!);
+                
+                var comparison = System.Linq.Expressions.Expression.Equal(property, tenantIdCall);
                 var lambda = System.Linq.Expressions.Expression.Lambda(comparison, parameter);
                 
                 builder.Entity(entityType.ClrType).HasQueryFilter(lambda);
