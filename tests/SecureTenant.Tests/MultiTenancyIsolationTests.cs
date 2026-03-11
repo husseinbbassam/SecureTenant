@@ -2,8 +2,10 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using SecureTenant.Core.Entities;
 using SecureTenant.Core.Interfaces;
+using SecureTenant.Core.Options;
 using SecureTenant.Infrastructure.Data;
 using SecureTenant.Infrastructure.Providers;
 
@@ -32,8 +34,9 @@ public class MultiTenancyIsolationTests
             httpContextAccessor.HttpContext = context;
         }
 
-        var tenantProvider = new TenantProvider(httpContextAccessor);
-        
+        var secureTenantOptions = Microsoft.Extensions.Options.Options.Create(new SecureTenantOptions());
+        var tenantProvider = new TenantProvider(httpContextAccessor, secureTenantOptions);
+
         return new ApplicationDbContext(options, tenantProvider);
     }
 
@@ -247,8 +250,9 @@ public class MultiTenancyIsolationTests
             httpContextAccessor.HttpContext = context;
         }
 
-        var tenantProvider = new TenantProvider(httpContextAccessor);
-        
+        var secureTenantOptions = Microsoft.Extensions.Options.Options.Create(new SecureTenantOptions());
+        var tenantProvider = new TenantProvider(httpContextAccessor, secureTenantOptions);
+
         return new ApplicationDbContext(options, tenantProvider);
     }
 
