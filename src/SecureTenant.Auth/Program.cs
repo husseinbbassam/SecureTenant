@@ -3,25 +3,27 @@ using Microsoft.EntityFrameworkCore;
 using OpenIddict.Abstractions;
 using SecureTenant.Auth.Middleware;
 using SecureTenant.Core.Entities;
-using SecureTenant.Core.Interfaces;
+using SecureTenant.Core.Options;
 using SecureTenant.Infrastructure.Data;
-using SecureTenant.Infrastructure.Providers;
+using SecureTenant.Infrastructure.Extensions;
 using static OpenIddict.Abstractions.OpenIddictConstants;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container
-builder.Services.AddHttpContextAccessor();
+// Bind SecureTenant options from configuration (appsettings.json "SecureTenant" section)
+builder.Services.Configure<SecureTenantOptions>(
+    builder.Configuration.GetSection(SecureTenantOptions.SectionName));
 
-// Register TenantProvider and TenantService
-builder.Services.AddScoped<ITenantProvider, TenantProvider>();
-builder.Services.AddScoped<ITenantService, SecureTenant.Infrastructure.Services.TenantService>();
+// Read options early so they can be passed to OpenIddict configuration below
+var secureTenantOptions = builder.Configuration
+    .GetSection(SecureTenantOptions.SectionName)
+    .Get<SecureTenantOptions>() ?? new SecureTenantOptions();
 
-// Configure Entity Framework and SQLite
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
+// Register SecureTenant infrastructure (tenant provider, tenant service, EF Core)
+builder.Services.AddSecureTenantInfrastructure(options =>
 {
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection"));
-    
+
     // Configure OpenIddict to use EF Core
     options.UseOpenIddict();
 });
@@ -35,12 +37,12 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
     options.Password.RequireUppercase = true;
     options.Password.RequireNonAlphanumeric = true;
     options.Password.RequiredLength = 8;
-    
+
     // Lockout settings
     options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
     options.Lockout.MaxFailedAccessAttempts = 5;
     options.Lockout.AllowedForNewUsers = true;
-    
+
     // User settings
     options.User.RequireUniqueEmail = true;
     options.SignIn.RequireConfirmedEmail = false;
@@ -56,7 +58,7 @@ builder.Services.AddOpenIddict()
         options.UseEntityFrameworkCore()
                .UseDbContext<ApplicationDbContext>();
     })
-    
+
     // Register the OpenIddict server components
     .AddServer(options =>
     {
@@ -65,24 +67,24 @@ builder.Services.AddOpenIddict()
                .SetTokenEndpointUris("/connect/token")
                .SetUserInfoEndpointUris("/connect/userinfo")
                .SetIntrospectionEndpointUris("/connect/introspect");
-        
+
         // Enable the authorization code flow with PKCE
         options.AllowAuthorizationCodeFlow()
                .RequireProofKeyForCodeExchange();
-        
+
         // Enable the client credentials flow
         options.AllowClientCredentialsFlow();
-        
+
         // Enable the refresh token flow with sliding expiration
         options.AllowRefreshTokenFlow();
-        
-        // Configure refresh token settings
-        options.SetRefreshTokenLifetime(TimeSpan.FromDays(14))
-               .SetAccessTokenLifetime(TimeSpan.FromMinutes(30));
-        
+
+        // Configure token lifetimes from options
+        options.SetRefreshTokenLifetime(secureTenantOptions.Tokens.RefreshTokenLifetime)
+               .SetAccessTokenLifetime(secureTenantOptions.Tokens.AccessTokenLifetime);
+
         // Register claims
         options.RegisterClaims(Claims.Name, Claims.Email, Claims.Role, "tenant_id", "user_hierarchy", "membership_level");
-        
+
         // Register scopes
         options.RegisterScopes(
             Scopes.OpenId,
@@ -91,21 +93,22 @@ builder.Services.AddOpenIddict()
             Scopes.Roles,
             "api"
         );
-        
+
         // Configure encryption and signing credentials
         // For development: use development signing and encryption keys
+        // For production: use options.AddSigningCertificate() / options.AddEncryptionCertificate()
         options.AddDevelopmentEncryptionCertificate()
                .AddDevelopmentSigningCertificate();
-        
+
         // Register the ASP.NET Core host and configure the ASP.NET Core-specific options
         options.UseAspNetCore()
                .EnableAuthorizationEndpointPassthrough()
                .EnableTokenEndpointPassthrough()
                .EnableUserInfoEndpointPassthrough()
                .EnableStatusCodePagesIntegration()
-               .DisableTransportSecurityRequirement(); // Allow HTTP for development
+               .DisableTransportSecurityRequirement(); // Allow HTTP for development - remove in production
     })
-    
+
     // Register the OpenIddict validation components
     .AddValidation(options =>
     {

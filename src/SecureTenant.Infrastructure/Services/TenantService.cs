@@ -1,75 +1,85 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using SecureTenant.Core.Interfaces;
+using SecureTenant.Core.Options;
 using SecureTenant.Infrastructure.Data;
 
 namespace SecureTenant.Infrastructure.Services;
 
 /// <summary>
-/// Service for managing tenant context and validation with database access
+/// Service for managing tenant context and validation with database access.
 /// </summary>
 public class TenantService : ITenantService
 {
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly ApplicationDbContext _dbContext;
-    
-    public TenantService(IHttpContextAccessor httpContextAccessor, ApplicationDbContext dbContext)
+    private readonly TenantResolutionOptions _resolutionOptions;
+
+    public TenantService(
+        IHttpContextAccessor httpContextAccessor,
+        ApplicationDbContext dbContext,
+        IOptions<SecureTenantOptions> options)
     {
         _httpContextAccessor = httpContextAccessor;
         _dbContext = dbContext;
+        _resolutionOptions = options.Value.TenantResolution;
     }
-    
+
     public string? GetCurrentTenantId()
     {
         var httpContext = _httpContextAccessor.HttpContext;
         if (httpContext == null)
             return null;
-        
-        // Try to get tenant from custom header first
-        if (httpContext.Request.Headers.TryGetValue("X-Tenant-Id", out var tenantIdHeader))
+
+        // Try to get tenant from the configured header first
+        if (httpContext.Request.Headers.TryGetValue(_resolutionOptions.HeaderName, out var tenantIdHeader))
         {
             return tenantIdHeader.ToString();
         }
-        
-        // Try to get tenant from subdomain and map it
-        var host = httpContext.Request.Host.Host;
-        if (!string.IsNullOrEmpty(host))
+
+        // Optionally resolve tenant from subdomain and map it to a tenant ID
+        if (_resolutionOptions.EnableSubdomainResolution)
         {
-            var parts = host.Split('.');
-            if (parts.Length > 1)
+            var host = httpContext.Request.Host.Host;
+            if (!string.IsNullOrEmpty(host))
             {
-                var subdomain = parts[0].ToLowerInvariant();
-                
-                // Map subdomain to TenantId (e.g., tenantA -> TenantA, tenantB -> TenantB)
-                if (subdomain.StartsWith("tenant"))
+                var parts = host.Split('.');
+                if (parts.Length > 1)
                 {
-                    // Capitalize first letter after "tenant"
-                    var suffix = subdomain.Substring("tenant".Length);
-                    if (!string.IsNullOrEmpty(suffix))
+                    var subdomain = parts[0].ToLowerInvariant();
+
+                    // Map subdomain to TenantId (e.g., tenantA -> TenantA, tenantB -> TenantB)
+                    if (subdomain.StartsWith("tenant"))
                     {
-                        return "Tenant" + char.ToUpperInvariant(suffix[0]) + suffix.Substring(1);
+                        // Capitalize first letter after "tenant"
+                        var suffix = subdomain.Substring("tenant".Length);
+                        if (!string.IsNullOrEmpty(suffix))
+                        {
+                            return "Tenant" + char.ToUpperInvariant(suffix[0]) + suffix.Substring(1);
+                        }
                     }
+
+                    // For other subdomains, return as-is (lowercase)
+                    return subdomain;
                 }
-                
-                // For other subdomains, return as-is (lowercase)
-                return subdomain;
             }
         }
-        
+
         return null;
     }
-    
+
     public async Task<bool> ValidateTenantAsync(string tenantId)
     {
         if (string.IsNullOrEmpty(tenantId))
             return false;
-        
+
         // Check if tenant exists and is active in the database
         // We need to query without tenant filter, so use IgnoreQueryFilters
         var tenant = await _dbContext.Tenants
             .IgnoreQueryFilters()
             .FirstOrDefaultAsync(t => t.Id == tenantId && t.IsActive);
-        
+
         return tenant != null;
     }
 }
