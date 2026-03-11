@@ -21,6 +21,13 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     }
     
     public DbSet<Tenant> Tenants { get; set; }
+
+    /// <summary>
+    /// Exposes the current tenant ID so that global query filters can reference this
+    /// DbContext instance at query execution time, allowing EF Core to substitute the
+    /// correct context when the compiled model is shared across instances.
+    /// </summary>
+    public string? CurrentTenantId => _tenantProvider.GetCurrentTenantId();
     
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -64,14 +71,16 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
         {
             if (typeof(ITenantEntity).IsAssignableFrom(entityType.ClrType))
             {
-                // Create the filter expression: e => e.TenantId == _tenantProvider.GetCurrentTenantId()
+                // Create the filter expression: e => e.TenantId == this.CurrentTenantId
                 var parameter = System.Linq.Expressions.Expression.Parameter(entityType.ClrType, "e");
                 var property = System.Linq.Expressions.Expression.Property(parameter, nameof(ITenantEntity.TenantId));
                 
-                // Create a call to _tenantProvider.GetCurrentTenantId() - this will be evaluated at query time
-                var tenantProviderConst = System.Linq.Expressions.Expression.Constant(_tenantProvider);
-                var getCurrentTenantIdMethod = typeof(ITenantProvider).GetMethod(nameof(ITenantProvider.GetCurrentTenantId));
-                var tenantIdCall = System.Linq.Expressions.Expression.Call(tenantProviderConst, getCurrentTenantIdMethod!);
+                // Access CurrentTenantId via 'this' (the DbContext) so EF Core substitutes
+                // the current executing context at query time, rather than using the captured
+                // provider instance from when the model was first compiled and cached.
+                var contextConst = System.Linq.Expressions.Expression.Constant(this, typeof(ApplicationDbContext));
+                var currentTenantIdProp = typeof(ApplicationDbContext).GetProperty(nameof(CurrentTenantId))!;
+                var tenantIdCall = System.Linq.Expressions.Expression.Property(contextConst, currentTenantIdProp);
                 
                 var comparison = System.Linq.Expressions.Expression.Equal(property, tenantIdCall);
                 var lambda = System.Linq.Expressions.Expression.Lambda(comparison, parameter);
